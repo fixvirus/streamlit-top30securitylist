@@ -1,7 +1,7 @@
 from langchain.agents import AgentType
-from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain.callbacks import StreamlitCallbackHandler
-from langchain.chat_models import ChatOpenAI
+from langchain_experimental.agents.agent_toolkits import create_pandas_dataframe_agent
+from langchain_community.callbacks import StreamlitCallbackHandler
+from langchain_openai import ChatOpenAI
 import streamlit as st
 import pandas as pd
 import os
@@ -71,7 +71,7 @@ if prompt := st.chat_input(placeholder="What is this data about?"):
         st.stop()
 
     llm = ChatOpenAI(
-        temperature=0, model="gpt-3.5-turbo-0613", openai_api_key=openai_api_key, streaming=True
+        temperature=0, model="gpt-4o-2024-11-20", openai_api_key=openai_api_key, streaming=True
     )
 
     pandas_df_agent = create_pandas_dataframe_agent(
@@ -84,6 +84,10 @@ if prompt := st.chat_input(placeholder="What is this data about?"):
 
     with st.chat_message("assistant"):
         st_cb = StreamlitCallbackHandler(st.container(), expand_new_thoughts=False)
-        response = pandas_df_agent.run(st.session_state.messages, callbacks=[st_cb])
-        st.session_state.messages.append({"role": "assistant", "content": response})
-        st.write(response)
+        chat_history = [
+            {"role": msg["role"], "content": msg["content"]}
+            for msg in st.session_state.messages[:-1]
+        ]
+        response = pandas_df_agent.invoke({"input": prompt, "chat_history": chat_history}, {"callbacks": [st_cb]})
+        st.session_state.messages.append({"role": "assistant", "content": response["output"]})
+        st.write(response["output"])
