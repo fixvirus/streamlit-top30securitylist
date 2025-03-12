@@ -122,10 +122,8 @@ if prompt:
     # Construct full prompt: Include system message + user input
     tools = [azure_search_tool]
     chat_agent = ConversationalChatAgent.from_llm_and_tools(
-            system_message=DEFAULT_PROMPT, 
-            llm=llm, 
-            tools=tools
-            )
+        system_message=DEFAULT_PROMPT, llm=llm, tools=tools
+    )
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
         tools=tools,
