@@ -11,6 +11,9 @@ import os
 import requests
 import streamlit as st
 from dotenv import load_dotenv
+from default_prompt import DEFAULT_PROMPT
+from langchain.schema import SystemMessage, HumanMessage
+
 
 load_dotenv()
 
@@ -18,7 +21,9 @@ azure_ew_api_key = os.getenv("OPENAI_API_KEY")
 azure_ew_endpoint = os.getenv("AZURE_ENDPOINT")
 azure_search_api = os.getenv("AZURE_SEARCH_API")
 azure_search_key = os.getenv("AZURE_SEARCH_KEY")
-azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
+# azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
+# azure_search_index = 'vector-1741772887139'
+azure_search_index = 'vector-14-22'
 azure_openai_api_version = os.getenv("API_VERSION")
 
 st.set_page_config(
@@ -45,21 +50,25 @@ def search_azure_ai(query: str) -> str:
     params = {
         "api-version": "2024-07-01",
         "search": query,
-        "top": 1,
+        "top": 10,
+        "minimumScore": 0.8,
     }
 
     response = requests.get(url, headers=headers, params=params)
 
     if response.status_code == 200:
         results = response.json()
-        docs = [doc["content"] for doc in results.get("value", [])]  # Adjust field name
+        docs = [doc for doc in results.values() if type(doc) == list][0]
+        for i in docs:
+            i.pop("text_vector")
         return (
-            "\n".join(docs)
+            # "\n".join(docs)
+            docs
             if docs
-            else "Nepodařilo se mi najít žádný report podle vašeho požadavku "
+            else "Report not found "
         )
     else:
-        return response.content
+        return 
         # return "Search failed. Check API key, index name, or Azure configuration."
 
 
@@ -80,7 +89,7 @@ memory = ConversationBufferMemory(
 )
 if len(msgs.messages) == 0 or st.sidebar.button("Reset chat history"):
     msgs.clear()
-    msgs.add_ai_message("How can I help you?")
+    msgs.add_ai_message("How can I help you today?")
     st.session_state.steps = {}
 
 avatars = {"human": "user", "ai": "assistant"}
@@ -95,7 +104,11 @@ for idx, msg in enumerate(msgs.messages):
                 st.write(step[1])
         st.write(msg.content)
 
-if prompt := st.chat_input(placeholder="write your message here"):
+prompt = st.chat_input(placeholder="write your message here")
+if prompt:
+    # prompt = DEFAULT_PROMPT + prompt
+    # prompt = st.chat_input(placeholder="write your message here")
+
     st.chat_message("user").write(prompt)
 
     llm = AzureChatOpenAI(
@@ -105,7 +118,13 @@ if prompt := st.chat_input(placeholder="write your message here"):
         streaming=True,
         api_version="2023-05-15",
         azure_deployment="gpt-4o-mini",
+        temperature=0.1,
     )
+
+    system_message = SystemMessage(content=DEFAULT_PROMPT)
+
+    # Construct full prompt: Include system message + user input
+    messages = [system_message] + [HumanMessage(content=prompt)]
     tools = [azure_search_tool]
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     executor = AgentExecutor.from_agent_and_tools(
