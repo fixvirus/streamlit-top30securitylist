@@ -5,13 +5,74 @@ from langchain_community.chat_message_histories import StreamlitChatMessageHisto
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.runnables import RunnableConfig
 from langchain_openai import AzureChatOpenAI
-
+from langchain.tools import StructuredTool
+from langchain.pydantic_v1 import BaseModel, Field
+import os
+import requests
 import streamlit as st
+from dotenv import load_dotenv
 
-st.set_page_config(page_title="LangChain: Chat with search", page_icon="🦜")
-st.title("🦜 LangChain: Chat with search")
+load_dotenv()
 
-openai_api_key = st.sidebar.text_input("OpenAI API Key", type="password")
+azure_ew_api_key = os.getenv("OPENAI_API_KEY")
+azure_ew_endpoint = os.getenv("AZURE_ENDPOINT")
+azure_search_api = os.getenv("AZURE_SEARCH_API")
+azure_search_key = os.getenv("AZURE_SEARCH_KEY")
+azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
+azure_openai_api_version = os.getenv("API_VERSION")
+
+st.set_page_config(
+    page_title="EW PBI Access Assistant", page_icon="./streamlit_agent/icons/ew_icon.jpeg"
+)
+
+col1, col2 = st.columns([1, 5])  # Adjust proportions
+
+with col1:
+    st.image("./streamlit_agent/icons/ew_icon.jpeg", width=80)
+
+with col2:
+    st.title("Eurowag PBI Access assistant")
+
+
+def search_azure_ai(query: str) -> str:
+    url = f"{azure_search_api}/indexes/{azure_search_index}/docs"
+
+    headers = {
+        "Content-Type": "application/json",
+        "api-key": azure_search_key,
+    }
+
+    params = {
+        "api-version": "2024-07-01",
+        "search": query,
+        "top": 1,
+    }
+
+    response = requests.get(url, headers=headers, params=params)
+
+    if response.status_code == 200:
+        results = response.json()
+        docs = [doc["content"] for doc in results.get("value", [])]  # Adjust field name
+        return (
+            "\n".join(docs)
+            if docs
+            else "Nepodařilo se mi najít žádný report podle vašeho požadavku "
+        )
+    else:
+        return response.content
+        # return "Search failed. Check API key, index name, or Azure configuration."
+
+
+class SearchQueryInput(BaseModel):
+    query: str = Field(description="Query to search in Azure AI Search")
+
+
+azure_search_tool = StructuredTool.from_function(
+    name="azure_ai_search",
+    func=search_azure_ai,
+    description="Use this tool to search Azure AI Search for relevant documents.",
+    args_schema=SearchQueryInput,
+)
 
 msgs = StreamlitChatMessageHistory()
 memory = ConversationBufferMemory(
@@ -34,15 +95,18 @@ for idx, msg in enumerate(msgs.messages):
                 st.write(step[1])
         st.write(msg.content)
 
-if prompt := st.chat_input(placeholder="Who won the Women's U.S. Open in 2018?"):
+if prompt := st.chat_input(placeholder="write your message here"):
     st.chat_message("user").write(prompt)
 
-    if not openai_api_key:
-        st.info("Please add your OpenAI API key to continue.")
-        st.stop()
-
-    llm = AzureChatOpenAI(model_name="gpt-4o-mini", openai_api_key=openai_api_key, streaming=True)
-    tools = [DuckDuckGoSearchRun(name="Search")]
+    llm = AzureChatOpenAI(
+        azure_endpoint=azure_ew_endpoint,
+        model_name="gpt-4o-mini",
+        api_key=azure_ew_api_key,
+        streaming=True,
+        api_version="2023-05-15",
+        azure_deployment="gpt-4o-mini",
+    )
+    tools = [azure_search_tool]
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
