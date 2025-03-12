@@ -10,7 +10,7 @@ ENV POETRY_NO_INTERACTION=1 \
     POETRY_VIRTUALENVS_CREATE=1 \
     POETRY_CACHE_DIR=/tmp/poetry_cache
 
-# A directory to have app data 
+# A directory to have app data
 WORKDIR /app
 
 COPY pyproject.toml poetry.lock ./
