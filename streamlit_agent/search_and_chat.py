@@ -4,7 +4,7 @@ from langchain_community.callbacks import StreamlitCallbackHandler
 from langchain_community.chat_message_histories import StreamlitChatMessageHistory
 from langchain_community.tools import DuckDuckGoSearchRun
 from langchain_core.runnables import RunnableConfig
-from langchain_openai import ChatOpenAI
+from langchain_openai import AzureChatOpenAI
 
 import streamlit as st
 
@@ -41,7 +41,7 @@ if prompt := st.chat_input(placeholder="Who won the Women's U.S. Open in 2018?")
         st.info("Please add your OpenAI API key to continue.")
         st.stop()
 
-    llm = ChatOpenAI(model_name="gpt-3.5-turbo", openai_api_key=openai_api_key, streaming=True)
+    llm = AzureChatOpenAI(model_name="gpt-4o-mini", openai_api_key=openai_api_key, streaming=True)
     tools = [DuckDuckGoSearchRun(name="Search")]
     chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
     executor = AgentExecutor.from_agent_and_tools(
