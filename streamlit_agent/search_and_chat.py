@@ -23,7 +23,7 @@ azure_search_api = os.getenv("AZURE_SEARCH_API")
 azure_search_key = os.getenv("AZURE_SEARCH_KEY")
 # azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
 # azure_search_index = 'vector-1741772887139'
-azure_search_index = 'vector-14-22'
+azure_search_index = "vector-14-22"
 azure_openai_api_version = os.getenv("API_VERSION")
 
 st.set_page_config(
@@ -68,7 +68,7 @@ def search_azure_ai(query: str) -> str:
             else "Report not found "
         )
     else:
-        return 
+        return
         # return "Search failed. Check API key, index name, or Azure configuration."
 
 
