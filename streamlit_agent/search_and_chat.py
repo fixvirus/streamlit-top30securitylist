@@ -13,7 +13,7 @@ import streamlit as st
 from dotenv import load_dotenv
 from default_prompt import DEFAULT_PROMPT
 from langchain.schema import SystemMessage, HumanMessage
-
+import json
 
 load_dotenv()
 
@@ -23,7 +23,7 @@ azure_search_api = os.getenv("AZURE_SEARCH_API")
 azure_search_key = os.getenv("AZURE_SEARCH_KEY")
 # azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
 # azure_search_index = 'vector-1741772887139'
-azure_search_index = "vector-14-22"
+azure_search_index = "vector-14-22-v3"
 azure_openai_api_version = os.getenv("API_VERSION")
 
 st.set_page_config(
@@ -50,8 +50,8 @@ def search_azure_ai(query: str) -> str:
     params = {
         "api-version": "2024-07-01",
         "search": query,
-        "top": 10,
-        "minimumScore": 0.8,
+        "top": 20,
+        # "minimumScore": 0.5,
     }
 
     response = requests.get(url, headers=headers, params=params)
@@ -61,15 +61,10 @@ def search_azure_ai(query: str) -> str:
         docs = [doc for doc in results.values() if type(doc) == list][0]
         for i in docs:
             i.pop("text_vector")
-        return (
-            # "\n".join(docs)
-            docs
-            if docs
-            else "Report not found "
-        )
+        if docs:
+            return json.dumps(docs)
     else:
-        return
-        # return "Search failed. Check API key, index name, or Azure configuration."
+        return "Search failed. Check API key, index name, or Azure configuration."
 
 
 class SearchQueryInput(BaseModel):
@@ -79,7 +74,7 @@ class SearchQueryInput(BaseModel):
 azure_search_tool = StructuredTool.from_function(
     name="azure_ai_search",
     func=search_azure_ai,
-    description="Use this tool to search Azure AI Search for relevant documents.",
+    description="Use this tool to search Azure AI Search for relevant documents. To filter relevant departments & groups use $filter at the end of the request",
     args_schema=SearchQueryInput,
 )
 
@@ -113,20 +108,24 @@ if prompt:
 
     llm = AzureChatOpenAI(
         azure_endpoint=azure_ew_endpoint,
-        model_name="gpt-4o-mini",
+        model_name="gpt-4o",
         api_key=azure_ew_api_key,
         streaming=True,
         api_version="2023-05-15",
-        azure_deployment="gpt-4o-mini",
+        azure_deployment="ew-hpbi",
         temperature=0.1,
+        max_tokens=16384,
     )
 
     system_message = SystemMessage(content=DEFAULT_PROMPT)
 
     # Construct full prompt: Include system message + user input
-    messages = [system_message] + [HumanMessage(content=prompt)]
     tools = [azure_search_tool]
-    chat_agent = ConversationalChatAgent.from_llm_and_tools(llm=llm, tools=tools)
+    chat_agent = ConversationalChatAgent.from_llm_and_tools(
+            system_message=DEFAULT_PROMPT, 
+            llm=llm, 
+            tools=tools
+            )
     executor = AgentExecutor.from_agent_and_tools(
         agent=chat_agent,
         tools=tools,
