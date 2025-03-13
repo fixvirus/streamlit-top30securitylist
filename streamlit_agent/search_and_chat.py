@@ -21,7 +21,7 @@ azure_ew_api_key = os.getenv("OPENAI_API_KEY")
 azure_ew_endpoint = os.getenv("AZURE_ENDPOINT")
 azure_search_api = os.getenv("AZURE_SEARCH_API")
 azure_search_key = os.getenv("AZURE_SEARCH_KEY")
-azure_search_index = 'vector-1741852195002'
+azure_search_index = "vector-1741852195002"
 azure_openai_api_version = os.getenv("API_VERSION")
 
 st.set_page_config(
