@@ -21,9 +21,7 @@ azure_ew_api_key = os.getenv("OPENAI_API_KEY")
 azure_ew_endpoint = os.getenv("AZURE_ENDPOINT")
 azure_search_api = os.getenv("AZURE_SEARCH_API")
 azure_search_key = os.getenv("AZURE_SEARCH_KEY")
-# azure_search_index = os.getenv("AZURE_SEARCH_INDEX")
-# azure_search_index = 'vector-1741772887139'
-azure_search_index = "vector-14-22-v3"
+azure_search_index = 'vector-1741852195002'
 azure_openai_api_version = os.getenv("API_VERSION")
 
 st.set_page_config(
@@ -74,7 +72,7 @@ class SearchQueryInput(BaseModel):
 azure_search_tool = StructuredTool.from_function(
     name="azure_ai_search",
     func=search_azure_ai,
-    description="Use this tool to search Azure AI Search for relevant documents. To filter relevant departments & groups use $filter at the end of the request",
+    description="Use this tool to search Azure AI Search for relevant documents. If user doesn't specify report name or his department, ASK USER FOR THIS INFO BEFORE YOU PROCEED TO SEARCH. To filter relevant departments & groups use $filter at the end of the request",
     args_schema=SearchQueryInput,
 )
 
@@ -101,9 +99,6 @@ for idx, msg in enumerate(msgs.messages):
 
 prompt = st.chat_input(placeholder="write your message here")
 if prompt:
-    # prompt = DEFAULT_PROMPT + prompt
-    # prompt = st.chat_input(placeholder="write your message here")
-
     st.chat_message("user").write(prompt)
 
     llm = AzureChatOpenAI(
