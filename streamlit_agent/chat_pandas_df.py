@@ -1,7 +1,7 @@
 from langchain.agents import AgentType
 from langchain_experimental.agents import create_pandas_dataframe_agent
-from langchain.callbacks import StreamlitCallbackHandler
-from langchain.chat_models import ChatOpenAI
+from langchain_community.callbacks import StreamlitCallbackHandler
+from langchain_community.chat_models import ChatOpenAI
 import streamlit as st
 import pandas as pd
 import os
