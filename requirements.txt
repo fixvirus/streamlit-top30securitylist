@@ -1,0 +1,6 @@
+langchain
+langchain-community
+streamlit
+feedparser  # for RSS
+chromadb    # free vector catalog
+requests    # NVD API
