@@ -9,7 +9,9 @@ from langchain.vectorstores import Chroma
 st.title("OverSiteSentry AI: Dynamic Top 30 + Vulnerability Catalog")
 
 # Your original Top 30 list as starting RSS URLs
-top30_feeds = ["https://thehackernews.com/feed", "https://darkreading.com/rss.xml", ...]  # add your 30
+top30_feeds = ["https://thehackernews.com/feed", "https://darkreading.com/rss.xml", "https://www.cisa.gov/cybersecurity-advisories/all.xml","https://blogs.jpcert.or.jp/en/atom.xml",
+               "https://cert.pl/en/atom.xml","https://www.cert.ssi.gouv.fr/feed/","https://cert.be/en/rss","https://cert.europa.eu/publications/threat-intelligence-rss",
+              "https://cert.gov.ua/api/articles/rss","http://www.reddit.com/r/blueteamsec/.rss","http://www.reddit.com/r/netsec/.rss"]  # add your 30
 
 if st.button("Run AI Update Now"):
     # LangChain agent logic here:
